@@ -1,5 +1,8 @@
 package com.datastream;
-import com.datastream.*;
+
+import java.time.Duration;
+import java.util.Collections;
+import java.util.Properties;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -14,8 +17,26 @@ public class Main {
         String groupId = "test-group";
         String topic = "test-topic";
 
-        Consumer consumerRunnable = new Consumer(brokers, groupId, topic);
-        Thread consumerThread = new Thread(consumerRunnable);
-        consumerThread.start();
+        Properties properties = new Properties();
+        properties.put("bootstrap.servers", brokers);
+        properties.put("group.id", groupId);
+        properties.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+        properties.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+
+        KafkaConsumer<String, String> consumer = new KafkaConsumer<>(properties);
+
+        consumer.subscribe(Collections.singletonList(topic));
+
+        try {
+            while (true) {
+                ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(100));
+                for (ConsumerRecord<String, String> record : records) {
+                    System.out.printf(record.value());
+                }
+            }
+        } finally {
+            consumer.close();
+        }
+      
     }
 }
